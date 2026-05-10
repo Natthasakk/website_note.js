@@ -40,7 +40,7 @@ async function verifyTokenEdge(token: string): Promise<boolean> {
   }
 }
 
-// ── Proxy (Next.js 16 middleware) ─────────────────────────────────────────────
+// ── Proxy (Next.js 16) ───────────────────────────────────────────────────
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
