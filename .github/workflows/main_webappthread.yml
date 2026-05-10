@@ -51,9 +51,9 @@ jobs:
         uses: azure/login@v2
         with:
           # อย่าลืมตรวจสอบว่าชื่อ Secret เหล่านี้ตรงกับใน GitHub Settings > Secrets ของคุณ
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D941D5EB58A54BA5B632766863071A27 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A9CB7F9F53234AF49B41716CD289CD43 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_EF28A143920743EAB97B51D14BB52296 }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_1D2AAE8931EC4775B5F6D214B1059CDC }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7B26234C82154BC680422B7141193F72 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_773A6668D9B24F5A8205CCA81F754588 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
