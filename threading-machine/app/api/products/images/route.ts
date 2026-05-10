@@ -1,48 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { BlobServiceClient } from "@azure/storage-blob";
+import { readImagesConfig, writeImagesConfig } from "@/lib/productImageStore";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 
-const CONTAINER_NAME = "product-images";
-const CONFIG_BLOB = "images-config.json";
-
-type ImagesConfig = Record<string, string[]>;
-
-async function getContainerClient() {
-  const cs = process.env.AZURE_STORAGE_CONNECTION_STRING;
-  if (!cs) throw new Error("Storage not configured.");
-  const container = BlobServiceClient.fromConnectionString(cs).getContainerClient(CONTAINER_NAME);
-  await container.createIfNotExists();
-  return container;
-}
-
-async function readConfig(container: ReturnType<typeof BlobServiceClient.prototype.getContainerClient>): Promise<ImagesConfig> {
-  try {
-    const blob = container.getBlockBlobClient(CONFIG_BLOB);
-    const download = await blob.downloadToBuffer();
-    return JSON.parse(download.toString());
-  } catch {
-    return {};
-  }
-}
-
-async function writeConfig(
-  container: ReturnType<typeof BlobServiceClient.prototype.getContainerClient>,
-  config: ImagesConfig
-) {
-  const blob = container.getBlockBlobClient(CONFIG_BLOB);
-  const body = JSON.stringify(config);
-  await blob.upload(body, Buffer.byteLength(body), {
-    blobHTTPHeaders: { blobContentType: "application/json" },
-  });
-}
-
-// GET /api/products/images — returns { productId: [url, ...] }
 export async function GET() {
   try {
-    const container = await getContainerClient();
-    const config = await readConfig(container);
+    const config = await readImagesConfig();
     return NextResponse.json(config, {
-      headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" },
+      headers: { "Cache-Control": "no-store" },
     });
   } catch (err) {
     console.error("Failed to read images config:", err);
@@ -50,7 +14,6 @@ export async function GET() {
   }
 }
 
-// POST /api/products/images — { productId, images: [url, ...] }
 export async function POST(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   if (!token || !verifySessionToken(token)) {
@@ -63,13 +26,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const container = await getContainerClient();
-    const config = await readConfig(container);
+    const config = await readImagesConfig();
     config[productId] = images;
-    await writeConfig(container, config);
+    await writeImagesConfig(config);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("Failed to save images config:", err);
-    return NextResponse.json({ error: "Failed to save." }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Failed to save.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

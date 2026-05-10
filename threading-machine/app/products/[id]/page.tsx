@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProduct, getRelated, products } from "@/lib/products";
+import { readImagesConfig } from "@/lib/productImageStore";
 import ProductDetailView from "@/components/products/ProductDetailView";
 
 // ── Static params ─────────────────────────────────────────────────────────────
@@ -36,23 +37,14 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-async function fetchProductImages(): Promise<Record<string, string[]>> {
-  try {
-    const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-    const res = await fetch(`${base}/api/products/images`, { next: { revalidate: 60 } });
-    if (!res.ok) return {};
-    return res.json();
-  } catch {
-    return {};
-  }
-}
+export const dynamic = "force-dynamic";
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = getProduct(id);
   if (!product) notFound();
 
-  const imagesConfig = await fetchProductImages();
+  const imagesConfig = await readImagesConfig();
   const productWithImages = {
     ...product,
     images: imagesConfig[id] ?? product.images ?? [],
