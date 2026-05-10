@@ -58,4 +58,4 @@ jobs:
         with:
           app-name: 'webappthread'
           slot-name: 'Production'
-          package: .
+          package: .# Trigger new run
