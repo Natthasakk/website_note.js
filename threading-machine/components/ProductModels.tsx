@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { threadingProducts, groovingProducts } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import { useLanguage } from "@/contexts/LanguageContext";
+import type { ImagesConfig } from "@/lib/productImageStore";
 
 // ── SVG Illustrations ─────────────────────────────────────────────────────────
 
@@ -339,9 +340,19 @@ function SectionHeader({ accentColor, label, title, description }: { accentColor
 
 // ── Page section ──────────────────────────────────────────────────────────────
 
-export default function ProductModels() {
+export default function ProductModels({ imagesConfig = {} }: { imagesConfig?: ImagesConfig }) {
   const { t } = useLanguage();
   const pm = t.productModels;
+
+  // Merge blob images into product data
+  const enrichedThreading = threadingProducts.map((p) => ({
+    ...p,
+    images: imagesConfig[p.id] ?? p.images ?? [],
+  }));
+  const enrichedGrooving = groovingProducts.map((p) => ({
+    ...p,
+    images: imagesConfig[p.id] ?? p.images ?? [],
+  }));
 
   const cardProps = {
     specLabels: pm.specs as string[],
@@ -376,14 +387,14 @@ export default function ProductModels() {
           {/* Desktop: 3-column grid */}
           <div className="hidden md:block">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
-              {threadingProducts.map((p, i) => (
+              {enrichedThreading.map((p, i) => (
                 <ModelCard key={p.id} product={p} dark={i === 1} isGrooving={false} {...cardProps} />
               ))}
             </div>
           </div>
           {/* Mobile: carousel */}
           <div className="md:hidden">
-            <MobileCarousel products={threadingProducts} isGrooving={false} {...cardProps} />
+            <MobileCarousel products={enrichedThreading} isGrooving={false} {...cardProps} />
           </div>
         </div>
 
@@ -398,14 +409,14 @@ export default function ProductModels() {
           {/* Desktop: 3-column grid */}
           <div className="hidden md:block">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
-              {groovingProducts.map((p, i) => (
+              {enrichedGrooving.map((p, i) => (
                 <ModelCard key={p.id} product={p} dark={i === 1} isGrooving={true} {...cardProps} />
               ))}
             </div>
           </div>
           {/* Mobile: carousel */}
           <div className="md:hidden">
-            <MobileCarousel products={groovingProducts} isGrooving={true} {...cardProps} />
+            <MobileCarousel products={enrichedGrooving} isGrooving={true} {...cardProps} />
           </div>
         </div>
 

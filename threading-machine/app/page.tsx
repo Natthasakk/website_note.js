@@ -4,6 +4,7 @@ import ProductModels from "@/components/ProductModels";
 import Features from "@/components/Features";
 import Specifications from "@/components/Specifications";
 import CTASection from "@/components/CTASection";
+import { readImagesConfig } from "@/lib/productImageStore";
 
 export const metadata: Metadata = {
   title: "TechThread Pro — Industrial Pipe Threading Machines Thailand",
@@ -17,11 +18,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const imagesConfig = await readImagesConfig();
+
   return (
     <>
       <Hero />
-      <ProductModels />
+      <ProductModels imagesConfig={imagesConfig} />
       <Features />
       <Specifications />
       <CTASection />
