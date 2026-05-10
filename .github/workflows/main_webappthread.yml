@@ -69,7 +69,18 @@ jobs:
         with:
           name: node-public
           path: ./public
-      
+
+      - name: Verify deployment structure
+        run: |
+          echo "=== Root files ==="
+          ls -la
+          echo "=== .next contents ==="
+          ls -la .next/
+          echo "=== .next/static ==="
+          ls .next/static/ | head -5
+          echo "=== node_modules sample ==="
+          ls node_modules/ | head -10
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -80,6 +91,7 @@ jobs:
       - name: Configure Azure Web App runtime
         run: |
           RG=$(az webapp list --query "[?name=='webappthread'].resourceGroup" -o tsv)
+          echo "Resource group: $RG"
           az webapp config set \
             --name webappthread \
             --resource-group "$RG" \
@@ -89,6 +101,12 @@ jobs:
             --name webappthread \
             --resource-group "$RG" \
             --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false
+          az webapp log config \
+            --name webappthread \
+            --resource-group "$RG" \
+            --application-logging filesystem \
+            --level verbose \
+            --web-server-logging filesystem
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
