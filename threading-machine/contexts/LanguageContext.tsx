@@ -7,13 +7,13 @@ import { translations, type Lang, type T } from "@/lib/i18n";
 type ContextValue = { lang: Lang; setLang: (l: Lang) => void; t: T };
 
 const LanguageContext = createContext<ContextValue>({
-  lang: "en",
+  lang: "th",
   setLang: () => {},
-  t: translations.en,
+  t: translations.th,
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLang] = useState<Lang>("th");
   return (
     <LanguageContext.Provider value={{ lang, setLang, t: translations[lang] as T }}>
       {children}
