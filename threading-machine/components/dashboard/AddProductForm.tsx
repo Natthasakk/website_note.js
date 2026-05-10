@@ -155,6 +155,7 @@ export default function AddProductForm() {
   const [form, setForm] = useState<FormData>(isEditing ? productToFormData(editProduct!) : empty);
   const [tab, setTab] = useState<Tab>("basic");
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [images, setImages] = useState<UploadedImage[]>(initialImages);
 
   // Auto-fill OG Image URL from the first uploaded image
@@ -180,14 +181,29 @@ export default function AddProductForm() {
     });
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const productData = {
-      ...form,
-      images: images.map((img) => img.url),
-      updatedAt: new Date().toISOString(),
-    };
-    console.log(isEditing ? "Updating product:" : "Creating product:", productData);
+    setSaveError(null);
+
+    if (isEditing && editId) {
+      try {
+        const res = await fetch("/api/products/images", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ productId: editId, images: images.map((img) => img.url) }),
+        });
+        if (!res.ok) {
+          const d = await res.json();
+          setSaveError(d.error ?? "Failed to save images.");
+          return;
+        }
+      } catch {
+        setSaveError("Network error. Please try again.");
+        return;
+      }
+    }
+
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }
@@ -228,6 +244,11 @@ export default function AddProductForm() {
               <path d="M2 7l3 3 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             Saved successfully
+          </div>
+        )}
+        {saveError && (
+          <div style={{ marginLeft: "auto", backgroundColor: "rgba(215,0,21,0.08)", color: "#D70015", padding: "8px 16px", borderRadius: 8, fontSize: 13, fontFamily: "'SF Pro Text', sans-serif" }}>
+            {saveError}
           </div>
         )}
       </div>

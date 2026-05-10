@@ -40,11 +40,7 @@ export const products: Product[] = [
     weight: "62 kg",
     price: "฿89,000",
     warranty: "2 years",
-    images: [
-      "/uploads/products/0fdcbad1-eb95-41a3-845c-4e6909a48df3.png",
-      "/uploads/products/105a0654-1859-4d04-8119-5031f223dcce.jpg",
-      "/uploads/products/12ad58f9-aa04-46f0-98b6-7caf7bd7225b.jpg",
-    ],
+    images: [],
     features: [
       "Automatic die head opens at thread completion",
       "Built-in oil pump for continuous lubrication",

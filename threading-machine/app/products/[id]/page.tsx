@@ -36,12 +36,29 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
+async function fetchProductImages(): Promise<Record<string, string[]>> {
+  try {
+    const base = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const res = await fetch(`${base}/api/products/images`, { next: { revalidate: 60 } });
+    if (!res.ok) return {};
+    return res.json();
+  } catch {
+    return {};
+  }
+}
+
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const product = getProduct(id);
   if (!product) notFound();
 
+  const imagesConfig = await fetchProductImages();
+  const productWithImages = {
+    ...product,
+    images: imagesConfig[id] ?? product.images ?? [],
+  };
+
   const related = getRelated(product);
 
-  return <ProductDetailView product={product} related={related} />;
+  return <ProductDetailView product={productWithImages} related={related} />;
 }
