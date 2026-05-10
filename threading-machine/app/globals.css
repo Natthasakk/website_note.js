@@ -222,10 +222,18 @@
     padding-left: 40px;
     padding-right: 40px;
   }
+
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 24px;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 1024px) {
   .section-container { padding-left: 24px; padding-right: 24px; }
+  .dashboard-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 767px) {
   .section-container { padding-left: 16px; padding-right: 16px; }

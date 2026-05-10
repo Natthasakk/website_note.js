@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import ImageUpload, { type UploadedImage } from "@/components/dashboard/ImageUpload";
+import { products, type Product } from "@/lib/products";
 
 type FormData = {
   name: string;
@@ -60,6 +62,44 @@ const empty: FormData = {
   structuredDataPrice: "",
 };
 
+function findSpec(product: Product, label: string): string {
+  for (const section of product.specs) {
+    const row = section.rows.find((r) => r.label === label);
+    if (row) return row.value;
+  }
+  return "";
+}
+
+function productToFormData(p: Product): FormData {
+  return {
+    name: p.name,
+    series: p.series,
+    tagline: p.tagline,
+    description: p.description,
+    pipeRange: p.pipeRange,
+    motorPower: p.motorPower,
+    speed: p.speed,
+    weight: p.weight,
+    voltage: findSpec(p, "Voltage"),
+    dimensions: findSpec(p, "Dimensions (L×W×H)"),
+    coolantTank: findSpec(p, "Coolant Tank"),
+    threadStandards: findSpec(p, "Thread Standards") || "BSPT, NPT",
+    certification: findSpec(p, "Certification") || "CE, ISO 9001:2015",
+    warranty: p.warranty,
+    price: p.price,
+    features: p.features.join("\n"),
+    status: "Published",
+    metaTitle: `${p.name} Pipe ${p.category === "grooving" ? "Grooving" : "Threading"} Machine | TechThread Pro`,
+    metaDescription: "",
+    metaKeywords: "",
+    ogTitle: `${p.name} Pipe ${p.category === "grooving" ? "Grooving" : "Threading"} Machine | TechThread Pro`,
+    ogDescription: "",
+    ogImageUrl: p.images?.[0] ?? "",
+    canonicalUrl: `/products/${p.id}`,
+    structuredDataPrice: p.price.replace(/[^0-9]/g, ""),
+  };
+}
+
 type Tab = "basic" | "specs" | "images" | "seo";
 
 const tabs: { id: Tab; label: string }[] = [
@@ -101,15 +141,32 @@ function FieldRow({ children }: { children: React.ReactNode }) {
 }
 
 export default function AddProductForm() {
-  const [form, setForm] = useState<FormData>(empty);
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit") ?? undefined;
+  const editProduct = editId ? products.find((p) => p.id === editId) : undefined;
+  const isEditing = !!editProduct;
+
+  const initialImages: UploadedImage[] = (editProduct?.images ?? []).map((url) => ({
+    url,
+    filename: url.split("/").pop() ?? url,
+    size: 0,
+  }));
+
+  const [form, setForm] = useState<FormData>(isEditing ? productToFormData(editProduct!) : empty);
   const [tab, setTab] = useState<Tab>("basic");
   const [saved, setSaved] = useState(false);
-  const [images, setImages] = useState<UploadedImage[]>([]);
+  const [images, setImages] = useState<UploadedImage[]>(initialImages);
+
+  // Auto-fill OG Image URL from the first uploaded image
+  useEffect(() => {
+    if (images.length > 0 && !form.ogImageUrl) {
+      set("ogImageUrl", images[0].url);
+    }
+  }, [images, form.ogImageUrl]);
 
   function set(field: keyof FormData, value: string) {
     setForm((prev) => {
       const next = { ...prev, [field]: value };
-      // Auto-fill SEO fields when basic info changes
       if (field === "name" && !prev.metaTitle) {
         next.metaTitle = `${value} Pipe Threading Machine | TechThread Pro`;
       }
@@ -125,6 +182,12 @@ export default function AddProductForm() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const productData = {
+      ...form,
+      images: images.map((img) => img.url),
+      updatedAt: new Date().toISOString(),
+    };
+    console.log(isEditing ? "Updating product:" : "Creating product:", productData);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }
@@ -153,10 +216,10 @@ export default function AddProductForm() {
         </Link>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 600, color: "#1D1D1F", fontFamily: "'SF Pro TH', sans-serif", marginBottom: 2 }}>
-            Add New Product
+            {isEditing ? `Edit: ${editProduct!.name}` : "Add New Product"}
           </h1>
           <p style={{ fontSize: 14, color: "#86868B", fontFamily: "'SF Pro Text', sans-serif" }}>
-            Fill in product details and SEO metadata
+            {isEditing ? `Editing product ID: ${editId}` : "Fill in product details and SEO metadata"}
           </p>
         </div>
         {saved && (
@@ -170,7 +233,7 @@ export default function AddProductForm() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 24, alignItems: "flex-start" }}>
+        <div className="dashboard-grid">
           {/* Main form */}
           <div>
             {/* Tabs */}
@@ -256,7 +319,7 @@ export default function AddProductForm() {
 
                 <div>
                   <Label>Tagline</Label>
-                  <input className="input-field" placeholder="e.g. The contractor&apos;s choice" value={form.tagline} onChange={(e) => set("tagline", e.target.value)} />
+                  <input className="input-field" placeholder="e.g. The contractor's choice" value={form.tagline} onChange={(e) => set("tagline", e.target.value)} />
                 </div>
 
                 <div>
@@ -295,6 +358,12 @@ export default function AddProductForm() {
                     onChange={(e) => set("features", e.target.value)}
                   />
                   <Hint>Each line becomes a feature bullet point on the product page.</Hint>
+                </div>
+
+                <div style={{ marginTop: 12, paddingTop: 24, borderTop: "1px solid #E8E8ED", display: "flex", justifyContent: "flex-end" }}>
+                  <button type="submit" className="btn-primary" style={{ height: 44, padding: "0 32px" }}>
+                    {form.status === "Published" ? (isEditing ? "Save Changes" : "Publish Product") : "Save Draft"}
+                  </button>
                 </div>
               </div>
             )}
@@ -367,6 +436,12 @@ export default function AddProductForm() {
                     <input className="input-field" placeholder="e.g. 2 years parts & labor" value={form.warranty} onChange={(e) => set("warranty", e.target.value)} />
                   </div>
                 </FieldRow>
+
+                <div style={{ marginTop: 12, paddingTop: 24, borderTop: "1px solid #E8E8ED", display: "flex", justifyContent: "flex-end" }}>
+                  <button type="submit" className="btn-primary" style={{ height: 44, padding: "0 32px" }}>
+                    {form.status === "Published" ? (isEditing ? "Save Changes" : "Publish Product") : "Save Draft"}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -381,6 +456,12 @@ export default function AddProductForm() {
                   Accepted formats: JPEG, PNG, WebP — max 5 MB each.
                 </p>
                 <ImageUpload images={images} onChange={setImages} maxImages={6} />
+
+                <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid #E8E8ED", display: "flex", justifyContent: "flex-end" }}>
+                  <button type="submit" className="btn-primary" style={{ height: 44, padding: "0 32px" }}>
+                    {form.status === "Published" ? (isEditing ? "Save Changes" : "Publish Product") : "Save Draft"}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -406,7 +487,6 @@ export default function AddProductForm() {
                       maxLength={70}
                     />
                     <Hint>Ideal length: 30–60 characters. Appears as the clickable title in Google results.</Hint>
-                    {/* SERP preview */}
                     {form.metaTitle && (
                       <div style={{ marginTop: 12, padding: "12px 16px", backgroundColor: "#F5F5F7", borderRadius: 12, border: "1px solid #E8E8ED" }}>
                         <div style={{ fontSize: 11, color: "#86868B", fontFamily: "'SF Pro Text', sans-serif", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>Google Preview</div>
@@ -458,6 +538,12 @@ export default function AddProductForm() {
                     />
                     <Hint>Set to avoid duplicate content issues. Use the primary URL for this product.</Hint>
                   </div>
+
+                  <div style={{ marginTop: 12, paddingTop: 24, borderTop: "1px solid #E8E8ED", display: "flex", justifyContent: "flex-end" }}>
+                    <button type="submit" className="btn-primary" style={{ height: 44, padding: "0 32px" }}>
+                      {form.status === "Published" ? (isEditing ? "Save Changes" : "Publish Product") : "Save Draft"}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Open Graph */}
@@ -502,7 +588,6 @@ export default function AddProductForm() {
                     <Hint>Recommended size: 1200×630 pixels. Place images in /public/og/</Hint>
                   </div>
 
-                  {/* Social preview */}
                   {(form.ogTitle || form.ogDescription) && (
                     <div style={{ border: "1px solid #E8E8ED", borderRadius: 12, overflow: "hidden" }}>
                       <div style={{ height: 120, backgroundColor: "#F5F5F7", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -581,7 +666,7 @@ export default function AddProductForm() {
                 </select>
               </div>
               <button type="submit" className="btn-primary" style={{ width: "100%", justifyContent: "center", fontSize: 15, height: 44 }}>
-                {form.status === "Published" ? "Publish Product" : "Save Draft"}
+                {form.status === "Published" ? (isEditing ? "Save Changes" : "Publish Product") : "Save Draft"}
               </button>
               <Link href="/dashboard/products" className="btn-secondary" style={{ width: "100%", justifyContent: "center", marginTop: 8 }}>
                 Cancel

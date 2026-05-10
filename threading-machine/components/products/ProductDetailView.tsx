@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LINE_URL } from "@/lib/i18n";
@@ -12,9 +13,13 @@ interface Props {
 
 export default function ProductDetailView({ product, related }: Props) {
   const { t } = useLanguage();
+  const [activeImg, setActiveImg] = useState(0);
   const pd = t.productDetail;
   const isGrooving = product.category === "grooving";
   const categoryLabel = isGrooving ? pd.grooving : pd.threading;
+
+  const hasImages = product.images && product.images.length > 0;
+  const displayImages = hasImages ? product.images! : [];
 
   return (
     <div style={{ backgroundColor: "#FFFFFF" }}>
@@ -94,32 +99,77 @@ export default function ProductDetailView({ product, related }: Props) {
                 >
                   {product.badge}
                 </div>
-                {isGrooving ? <LargeGroovingIllustration /> : <LargeThreadingIllustration />}
+                {hasImages ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={displayImages[activeImg]}
+                    alt={product.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : isGrooving ? (
+                  <LargeGroovingIllustration />
+                ) : (
+                  <LargeThreadingIllustration />
+                )}
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    style={{
-                      flex: 1,
-                      aspectRatio: "1",
-                      backgroundColor: i === 0 ? "#E8E8ED" : "#F5F5F7",
-                      borderRadius: 10,
-                      border: i === 0 ? "2px solid #D70015" : "1px solid #E8E8ED",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <rect x="2" y="2" width="16" height="16" rx="3" stroke="#C0C0C5" strokeWidth="1.5" />
-                      <circle cx="7" cy="7" r="2" stroke="#C0C0C5" strokeWidth="1.2" />
-                      <path d="M2 14l4-4 3 3 3-3 6 6" stroke="#C0C0C5" strokeWidth="1.2" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                ))}
-              </div>
+
+              {/* Gallery Thumbnails */}
+              {hasImages && displayImages.length > 1 && (
+                <div style={{ display: "flex", gap: 8 }}>
+                  {displayImages.map((img, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setActiveImg(i)}
+                      style={{
+                        flex: 1,
+                        aspectRatio: "1",
+                        backgroundColor: "#F5F5F7",
+                        borderRadius: 10,
+                        border: i === activeImg ? "2px solid #D70015" : "1px solid #E8E8ED",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={img}
+                        alt={`${product.name} thumbnail ${i + 1}`}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!hasImages && (
+                <div style={{ display: "flex", gap: 8 }}>
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      style={{
+                        flex: 1,
+                        aspectRatio: "1",
+                        backgroundColor: i === 0 ? "#E8E8ED" : "#F5F5F7",
+                        borderRadius: 10,
+                        border: i === 0 ? "2px solid #D70015" : "1px solid #E8E8ED",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <rect x="2" y="2" width="16" height="16" rx="3" stroke="#C0C0C5" strokeWidth="1.5" />
+                        <circle cx="7" cy="7" r="2" stroke="#C0C0C5" strokeWidth="1.2" />
+                        <path d="M2 14l4-4 3 3 3-3 6 6" stroke="#C0C0C5" strokeWidth="1.2" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Right: Info */}

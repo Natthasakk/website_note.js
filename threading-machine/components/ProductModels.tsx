@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { threadingProducts, groovingProducts } from "@/lib/products";
 import type { Product } from "@/lib/products";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -91,8 +92,11 @@ function ModelCard({
   startingFrom: string;
   learnMore: string;
 }) {
+  const router = useRouter();
+
   return (
     <div
+      onClick={() => router.push(`/products/${product.id}`)}
       style={{
         backgroundColor: dark ? "#1D1D1F" : "#FFFFFF",
         border: `1px solid ${dark ? "#272729" : "#E8E8ED"}`,
@@ -102,7 +106,7 @@ function ModelCard({
         transition: "box-shadow 300ms ease, transform 300ms ease",
         display: "flex",
         flexDirection: "column",
-        cursor: "default",
+        cursor: "pointer",
         height: "100%",
       }}
       onMouseEnter={(e) => {
@@ -137,7 +141,7 @@ function ModelCard({
         {product.badge}
       </span>
 
-      {/* Illustration */}
+      {/* Illustration / Image */}
       <div
         style={{
           width: "100%",
@@ -152,14 +156,28 @@ function ModelCard({
           overflow: "hidden",
         }}
       >
-        {isGrooving ? <GroovingSVG dark={dark} /> : <ThreadingSVG dark={dark} />}
+        {product.images && product.images.length > 0 ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : isGrooving ? (
+          <GroovingSVG dark={dark} />
+        ) : (
+          <ThreadingSVG dark={dark} />
+        )}
         <div
           style={{
             position: "absolute",
             bottom: 10,
             right: 16,
             fontSize: 11,
-            color: dark ? "rgba(255,255,255,0.3)" : "#86868B",
+            color: product.images && product.images.length > 0 ? "#FFFFFF" : (dark ? "rgba(255,255,255,0.3)" : "#86868B"),
+            backgroundColor: product.images && product.images.length > 0 ? "rgba(0,0,0,0.3)" : "transparent",
+            padding: product.images && product.images.length > 0 ? "2px 6px" : 0,
+            borderRadius: 4,
             fontFamily: "'SF Pro Text', sans-serif",
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -227,7 +245,7 @@ function ModelCard({
             {product.price}
           </div>
         </div>
-        <Link href={`/products/${product.id}`} className="btn-primary" style={{ fontSize: 14, height: 40, padding: "0 20px" }}>
+        <Link href={`/products/${product.id}`} className="btn-primary" style={{ fontSize: 14, height: 40, padding: "0 20px" }} onClick={(e) => e.stopPropagation()}>
           {learnMore}
         </Link>
       </div>
