@@ -101,7 +101,8 @@ jobs:
           az webapp config appsettings set \
             --name webappthread \
             --resource-group "$RG" \
-            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false
+            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false ENABLE_ORYX_BUILD=false \
+              "AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}"
           az webapp log config \
             --name webappthread \
             --resource-group "$RG" \

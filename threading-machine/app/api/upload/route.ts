@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "node:fs/promises";
+import { BlobServiceClient } from "@azure/storage-blob";
 import path from "node:path";
 import crypto from "node:crypto";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
@@ -7,7 +7,7 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const ALLOWED_EXTS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "products");
+const CONTAINER_NAME = "product-images";
 
 export async function POST(req: NextRequest) {
   // ── Auth check ──────────────────────────────────────────────────────────
@@ -54,22 +54,33 @@ export async function POST(req: NextRequest) {
   // ── Read & validate magic bytes ─────────────────────────────────────────
   const buffer = Buffer.from(await file.arrayBuffer());
   if (!hasValidMagicBytes(buffer, file.type)) {
-    return NextResponse.json({ error: "File content does not match declared type." }, { status: 415 });
+    return NextResponse.json(
+      { error: "File content does not match declared type." },
+      { status: 415 }
+    );
   }
 
-  // ── Generate safe filename (never trust user input) ─────────────────────
+  // ── Upload to Azure Blob Storage ────────────────────────────────────────
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+  if (!connectionString) {
+    return NextResponse.json({ error: "Storage not configured." }, { status: 500 });
+  }
+
   const safeExt = originalExt === ".jpg" ? ".jpg" : originalExt;
-  const filename = `${crypto.randomUUID()}${safeExt}`;
+  const blobName = `products/${crypto.randomUUID()}${safeExt}`;
 
-  // ── Ensure upload directory exists ─────────────────────────────────────
-  await mkdir(UPLOAD_DIR, { recursive: true });
+  const containerClient = BlobServiceClient
+    .fromConnectionString(connectionString)
+    .getContainerClient(CONTAINER_NAME);
 
-  // ── Write file ──────────────────────────────────────────────────────────
-  const filePath = path.join(UPLOAD_DIR, filename);
-  await writeFile(filePath, buffer);
+  await containerClient.createIfNotExists({ access: "blob" });
 
-  const url = `/uploads/products/${filename}`;
-  return NextResponse.json({ url, filename, size: file.size });
+  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+  await blockBlobClient.uploadData(buffer, {
+    blobHTTPHeaders: { blobContentType: file.type },
+  });
+
+  return NextResponse.json({ url: blockBlobClient.url, size: file.size });
 }
 
 // ── Magic byte validation ─────────────────────────────────────────────────────

@@ -33,7 +33,7 @@ const securityHeaders = [
       // Allow inline scripts for JSON-LD and Next.js hydration
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       // Only allow images from same origin and data URIs (for previews)
-      "img-src 'self' data: blob:",
+      "img-src 'self' data: blob: https://productimagesjs.blob.core.windows.net",
       "font-src 'self'",
       "connect-src 'self'",
       "frame-ancestors 'none'",
