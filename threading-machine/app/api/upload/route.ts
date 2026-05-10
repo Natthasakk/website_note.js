@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { BlobServiceClient } from "@azure/storage-blob";
+import { BlobServiceClient, BlobSASPermissions } from "@azure/storage-blob";
 import path from "node:path";
 import crypto from "node:crypto";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth";
@@ -81,7 +81,14 @@ export async function POST(req: NextRequest) {
       blobHTTPHeaders: { blobContentType: file.type },
     });
 
-    return NextResponse.json({ url: blockBlobClient.url, size: file.size });
+    // Generate a SAS URL valid for 100 years so the image is publicly readable
+    // without requiring the blob container to be set to public access.
+    const sasUrl = await blockBlobClient.generateSasUrl({
+      permissions: BlobSASPermissions.parse("r"),
+      expiresOn: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000),
+    });
+
+    return NextResponse.json({ url: sasUrl, size: file.size });
   } catch (err) {
     console.error("Blob upload error:", err);
     const message = err instanceof Error ? err.message : "Upload failed.";

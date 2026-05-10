@@ -158,6 +158,26 @@ export default function AddProductForm() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [images, setImages] = useState<UploadedImage[]>(initialImages);
 
+  // Load saved images from blob storage config when editing
+  useEffect(() => {
+    if (!editId) return;
+    fetch("/api/products/images", { credentials: "same-origin" })
+      .then((r) => r.json())
+      .then((config: Record<string, string[]>) => {
+        const savedUrls = config[editId];
+        if (savedUrls && savedUrls.length > 0) {
+          setImages(
+            savedUrls.map((url) => ({
+              url,
+              filename: url.split("/").pop() ?? url,
+              size: 0,
+            }))
+          );
+        }
+      })
+      .catch(() => {/* network error — keep initial state */});
+  }, [editId]);
+
   // Auto-fill OG Image URL from the first uploaded image
   useEffect(() => {
     if (images.length > 0 && !form.ogImageUrl) {
