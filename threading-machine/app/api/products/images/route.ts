@@ -11,7 +11,7 @@ async function getContainerClient() {
   const cs = process.env.AZURE_STORAGE_CONNECTION_STRING;
   if (!cs) throw new Error("Storage not configured.");
   const container = BlobServiceClient.fromConnectionString(cs).getContainerClient(CONTAINER_NAME);
-  await container.createIfNotExists({ access: "blob" });
+  await container.createIfNotExists();
   return container;
 }
 

@@ -69,18 +69,24 @@ export async function POST(req: NextRequest) {
   const safeExt = originalExt === ".jpg" ? ".jpg" : originalExt;
   const blobName = `products/${crypto.randomUUID()}${safeExt}`;
 
-  const containerClient = BlobServiceClient
-    .fromConnectionString(connectionString)
-    .getContainerClient(CONTAINER_NAME);
+  try {
+    const containerClient = BlobServiceClient
+      .fromConnectionString(connectionString)
+      .getContainerClient(CONTAINER_NAME);
 
-  await containerClient.createIfNotExists({ access: "blob" });
+    await containerClient.createIfNotExists();
 
-  const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-  await blockBlobClient.uploadData(buffer, {
-    blobHTTPHeaders: { blobContentType: file.type },
-  });
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+    await blockBlobClient.uploadData(buffer, {
+      blobHTTPHeaders: { blobContentType: file.type },
+    });
 
-  return NextResponse.json({ url: blockBlobClient.url, size: file.size });
+    return NextResponse.json({ url: blockBlobClient.url, size: file.size });
+  } catch (err) {
+    console.error("Blob upload error:", err);
+    const message = err instanceof Error ? err.message : "Upload failed.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 // ── Magic byte validation ─────────────────────────────────────────────────────
