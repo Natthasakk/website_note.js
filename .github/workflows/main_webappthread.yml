@@ -77,6 +77,19 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7B26234C82154BC680422B7141193F72 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_773A6668D9B24F5A8205CCA81F754588 }}
 
+      - name: Configure Azure Web App runtime
+        run: |
+          RG=$(az webapp list --query "[?name=='webappthread'].resourceGroup" -o tsv)
+          az webapp config set \
+            --name webappthread \
+            --resource-group "$RG" \
+            --linux-fx-version "NODE|22-lts" \
+            --startup-file "node server.js"
+          az webapp config appsettings set \
+            --name webappthread \
+            --resource-group "$RG" \
+            --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false
+
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -84,5 +97,3 @@ jobs:
           app-name: 'webappthread'
           slot-name: 'Production'
           package: .
-          startup-command: 'node server.js'
-          app-settings-json: '[{"name":"SCM_DO_BUILD_DURING_DEPLOYMENT","value":"false"},{"name":"WEBSITE_NODE_DEFAULT_VERSION","value":"~22"}]'
