@@ -84,3 +84,5 @@ jobs:
           app-name: 'webappthread'
           slot-name: 'Production'
           package: .
+          startup-command: 'node server.js'
+          app-settings-json: '[{"name":"SCM_DO_BUILD_DURING_DEPLOYMENT","value":"false"},{"name":"WEBSITE_NODE_DEFAULT_VERSION","value":"~22"}]'
